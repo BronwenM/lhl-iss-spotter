@@ -22,8 +22,33 @@ const fetchMyIP = function(callback) {
       return;
     }
 
-    callback(error, body.ip);
+    callback(null, body.ip);
   });
 };
 
-module.exports = { fetchMyIP };
+const fetchCoordsByIP = (ip, callback) => {
+  needle.get(`https://ipwho.is/${ip}`, (error, response, body) => {
+    if (error) {
+      callback(error, null);
+      return;
+    }
+
+    // if non-200 status, assume server error
+    if (response.statusCode !== 200) {
+      const msg = `Status Code ${response.statusCode} when fetching IP. Response ${body}`;
+      callback(Error(msg), null);
+      return;
+    }
+
+    if (!body.success) {
+      callback(Error(`${body.message}. IP address set to ${ip}`));
+    }
+
+    callback(null, {
+      latitude: body.latitude,
+      longitude: body.longitude
+    });
+  });
+};
+
+module.exports = { fetchMyIP, fetchCoordsByIP };
